@@ -1,0 +1,28 @@
+# Swift / SwiftPM
+.build/
+.swiftpm/
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+Package.resolved
+
+# 构建产物
+build/
+*.app
+*.icns
+MonitorBar.iconset/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# 编辑器
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# 系统日志 / 用户残留
+*.log
+xcuserdata/
