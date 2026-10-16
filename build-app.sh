@@ -53,6 +53,10 @@ else
 fi
 
 echo "▸ Ad-hoc 签名…"
+# dev 版用 ad-hoc 签，只能用 MonitorBar.entitlements（不能声明私有 entitlement，
+# 否则 taskgated 会 SIGKILL 整个进程）。
+# prod 版（开发者账号签名）才能用 MonitorBar.production.entitlements，里面有
+# com.apple.developer.temperature-monitoring。
 ENTITLEMENTS="$ROOT/Resources/MonitorBar.entitlements"
 if [ -f "$ENTITLEMENTS" ]; then
   codesign --force --sign - --entitlements "$ENTITLEMENTS" --timestamp=none "$APP" >/dev/null 2>&1 || true
