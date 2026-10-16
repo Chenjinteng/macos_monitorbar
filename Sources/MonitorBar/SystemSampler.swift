@@ -179,6 +179,10 @@ final class SystemSampler {
         if mem.total == 0 { mem.total = totalMemory }
         snap.memory = mem
 
+        // SMC 读温度：失败/不存在的机型直接返回 nil，UI 用热状态兜底
+        snap.cpuTemperatureC = SMCSampler.cpuTemperatureC()
+        snap.thermalState = ProcessInfo.processInfo.thermalState
+
         return snap
     }
 }

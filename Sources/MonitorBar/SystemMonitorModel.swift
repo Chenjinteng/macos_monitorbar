@@ -11,6 +11,7 @@ final class Preferences {
         static let showCPU = "showCPU"
         static let showMemory = "showMemory"
         static let showSwap = "showSwap"
+        static let showTemperature = "showTemperature"
         static let launchAtLogin = "launchAtLogin"
     }
 
@@ -32,6 +33,10 @@ final class Preferences {
         didSet { defaults.set(showSwap, forKey: Key.showSwap) }
     }
 
+    var showTemperature: Bool {
+        didSet { defaults.set(showTemperature, forKey: Key.showTemperature) }
+    }
+
     var launchAtLogin: Bool {
         didSet { applyLaunchAtLogin(launchAtLogin) }
     }
@@ -46,6 +51,7 @@ final class Preferences {
         showCPU = defaults.object(forKey: Key.showCPU) as? Bool ?? true
         showMemory = defaults.object(forKey: Key.showMemory) as? Bool ?? true
         showSwap = defaults.object(forKey: Key.showSwap) as? Bool ?? false
+        showTemperature = defaults.object(forKey: Key.showTemperature) as? Bool ?? true
         launchAtLogin = SMAppService.mainApp.status == .enabled
     }
 

@@ -53,7 +53,12 @@ else
 fi
 
 echo "▸ Ad-hoc 签名…"
-codesign --force --sign - --timestamp=none "$APP" >/dev/null 2>&1 || true
+ENTITLEMENTS="$ROOT/Resources/MonitorBar.entitlements"
+if [ -f "$ENTITLEMENTS" ]; then
+  codesign --force --sign - --entitlements "$ENTITLEMENTS" --timestamp=none "$APP" >/dev/null 2>&1 || true
+else
+  codesign --force --sign - --timestamp=none "$APP" >/dev/null 2>&1 || true
+fi
 
 echo "✓ 完成: $APP"
 

@@ -4,6 +4,11 @@ import Foundation
 struct SystemSnapshot: Sendable {
     var cpuOverall: Double = 0        // 0...100
     var cpuCores: [Double] = []       // 每个逻辑核心 0...100
+    /// SMC 读到的 CPU 温度（°C）。读不到时为 nil（典型：macOS 15+ 没拿到
+    /// `com.apple.developer.temperature-monitoring` entitlement）。
+    var cpuTemperatureC: Double? = nil
+    /// 系统级热状态（4 档），任何时候都能拿到。cpuTemperatureC == nil 时用作兜底。
+    var thermalState: ProcessInfo.ThermalState = .nominal
     var memory: MemorySample = .zero
     var loadAverage: [Double] = [0, 0, 0]
     var date: Date = .now

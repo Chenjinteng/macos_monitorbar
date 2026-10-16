@@ -20,11 +20,88 @@ extension Color {
         )
     }
 
+    /// CPU 温度配色，<50 凉，<70 温，<85 热，≥85 烫
+    static func temperatureColor(_ c: Double) -> Color {
+        switch c {
+        case ..<50: Color(red: 0.20, green: 0.72, blue: 0.44)   // 绿
+        case ..<70: Color(red: 0.95, green: 0.72, blue: 0.20)   // 黄
+        case ..<85: Color(red: 0.95, green: 0.50, blue: 0.20)   // 橙
+        default:    Color(red: 0.90, green: 0.32, blue: 0.28)   // 红
+        }
+    }
+
     static let memoryApp = Color(red: 0.30, green: 0.55, blue: 0.95)
     static let memoryWired = Color(red: 0.62, green: 0.42, blue: 0.90)
     static let memoryCompressed = Color(red: 0.20, green: 0.72, blue: 0.72)
     static let memoryCached = Color(red: 0.58, green: 0.62, blue: 0.68)
     static let memoryFree = Color(red: 0.30, green: 0.62, blue: 0.36)
+}
+
+extension ProcessInfo.ThermalState {
+    /// 中文显示
+    var displayName: String {
+        switch self {
+        case .nominal:  "正常"
+        case .fair:     "温热"
+        case .serious:  "过热"
+        case .critical: "烫手"
+        @unknown default: "未知"
+        }
+    }
+
+    /// 热状态配色（4 档）
+    var color: Color {
+        switch self {
+        case .nominal:  Color(red: 0.20, green: 0.72, blue: 0.44)
+        case .fair:     Color(red: 0.95, green: 0.72, blue: 0.20)
+        case .serious:  Color(red: 0.95, green: 0.50, blue: 0.20)
+        case .critical: Color(red: 0.90, green: 0.32, blue: 0.28)
+        @unknown default: Color.gray
+        }
+    }
+
+    /// 热状态对应的 0...1 位置，用来画通用条
+    var barRatio: Double {
+        switch self {
+        case .nominal:  0.20
+        case .fair:     0.50
+        case .serious:  0.75
+        case .critical: 0.95
+        @unknown default: 0.20
+        }
+    }
+}
+
+/// 4 档热状态条：把 nominal/fair/serious/critical 画成一格一格的胶囊
+struct ThermalStateBar: View {
+    let state: ProcessInfo.ThermalState
+    var height: CGFloat = 6
+
+    var body: some View {
+        GeometryReader { geo in
+            HStack(spacing: 2) {
+                ForEach(0..<4, id: \.self) { i in
+                    let active = isActive(level: i)
+                    Capsule()
+                        .fill(active ? state.color : Color.primary.opacity(0.08))
+                        .frame(maxWidth: .infinity, maxHeight: height)
+                }
+            }
+        }
+        .frame(height: height)
+    }
+
+    private func isActive(level: Int) -> Bool {
+        let current: Int
+        switch state {
+        case .nominal:  current = 0
+        case .fair:     current = 1
+        case .serious:  current = 2
+        case .critical: current = 3
+        @unknown default: current = 0
+        }
+        return level <= current
+    }
 }
 
 // MARK: - 格式化
@@ -127,6 +204,43 @@ struct CoreBar: View {
             }
         }
         .frame(height: height)
+    }
+}
+
+/// 温度刻度条：30–100°C 范围，当前值填色，60/80 处画阈值刻度
+struct TemperatureBar: View {
+    let celsius: Double
+    let range: ClosedRange<Double>
+    let color: Color
+    var height: CGFloat = 6
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.primary.opacity(0.08))
+                Capsule()
+                    .fill(color.opacity(0.85))
+                    .frame(width: fillWidth(geo.size.width))
+                ForEach([60.0, 80.0], id: \.self) { threshold in
+                    let x = position(of: threshold, width: geo.size.width)
+                    Rectangle()
+                        .fill(Color.primary.opacity(0.35))
+                        .frame(width: 1, height: height + 4)
+                        .offset(x: x, y: 0)
+                }
+            }
+        }
+        .frame(height: height)
+    }
+
+    private func position(of value: Double, width: CGFloat) -> CGFloat {
+        let span = range.upperBound - range.lowerBound
+        let clamped = min(max(value, range.lowerBound), range.upperBound)
+        return CGFloat((clamped - range.lowerBound) / span) * width
+    }
+
+    private func fillWidth(_ width: CGFloat) -> CGFloat {
+        position(of: celsius, width: width)
     }
 }
 

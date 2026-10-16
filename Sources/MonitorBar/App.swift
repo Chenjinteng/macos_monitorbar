@@ -196,6 +196,11 @@ enum SampleCLI {
             print(String(format: "     交换 %@ / %@  负载 %.2f %.2f %.2f",
                          Format.bytes(mem.swapUsed), Format.bytes(mem.swapTotal),
                          s.loadAverage[0], s.loadAverage[1], s.loadAverage[2]))
+            if let t = s.cpuTemperatureC {
+                print(String(format: "     CPU 温度 %.0f°C", t))
+            } else {
+                print("     CPU 温度 不可用（SMC 读不到）")
+            }
         }
 
         print(String(repeating: "─", count: 60))

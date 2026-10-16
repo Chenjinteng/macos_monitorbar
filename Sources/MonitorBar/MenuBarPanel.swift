@@ -38,6 +38,7 @@ struct MenuBarPanel: View {
     private var panelBody: some View {
         VStack(alignment: .leading, spacing: 16) {
             cpuSection
+            if prefs.showTemperature { temperatureSection }
             memorySection
             if prefs.showSwap { swapSection }
             DividerLine()
@@ -193,6 +194,86 @@ struct MenuBarPanel: View {
         }
     }
 
+    // MARK: 温度
+
+    private var temperatureSection: some View {
+        let temp = model.snapshot.cpuTemperatureC
+        return PanelRow(title: "温度", trailing: tempTrailing(temp)) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .lastTextBaseline, spacing: 8) {
+                    if let temp {
+                        Text(String(format: "%.0f", temp))
+                            .font(.system(size: 22, weight: .semibold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(Color.temperatureColor(temp))
+                        Text("°C")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        // SMC 读不到（macOS 15+ 没拿到 temperature-monitoring entitlement），用热状态兜底
+                        Text(model.snapshot.thermalState.displayName)
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .foregroundStyle(model.snapshot.thermalState.color)
+                    }
+                    Spacer()
+                    Text(tempLabel(temp))
+                        .font(.system(size: 10, weight: .medium))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(tempBadgeColor(temp).opacity(0.18)))
+                        .foregroundStyle(tempBadgeColor(temp))
+                }
+                if let temp {
+                    TemperatureBar(celsius: temp, range: 30...100,
+                                  color: Color.temperatureColor(temp))
+                } else {
+                    ThermalStateBar(state: model.snapshot.thermalState)
+                }
+                Text(tempFootnote)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func tempLabel(_ c: Double?) -> String {
+        if let c {
+            switch c {
+            case ..<50: "凉"
+            case ..<70: "温"
+            case ..<85: "热"
+            default:    "烫"
+            }
+        } else {
+            switch model.snapshot.thermalState {
+            case .nominal:  "正常"
+            case .fair:     "温热"
+            case .serious:  "过热"
+            case .critical: "烫手"
+            @unknown default: "未知"
+            }
+        }
+    }
+
+    private func tempBadgeColor(_ c: Double?) -> Color {
+        if let c { return Color.temperatureColor(c) }
+        return model.snapshot.thermalState.color
+    }
+
+    private var tempFootnote: String {
+        if model.snapshot.cpuTemperatureC != nil {
+            return "CPU 接近温度 · 阈值 60/80 °C"
+        } else {
+            return "实际 °C 需要 `temperature-monitoring` entitlement，当前仅热状态"
+        }
+    }
+
+    private func tempTrailing(_ c: Double?) -> String {
+        guard model.isReady else { return "—" }
+        if let c { return String(format: "%.0f°C", c) }
+        return model.snapshot.thermalState.displayName
+    }
+
     // MARK: 交换空间
 
     private var swapSection: some View {
@@ -236,6 +317,7 @@ struct MenuBarPanel: View {
 
             toggle("菜单栏显示 CPU", isOn: binding(\.showCPU))
             toggle("菜单栏显示内存", isOn: binding(\.showMemory))
+            toggle("面板显示温度", isOn: binding(\.showTemperature))
             toggle("面板显示交换空间", isOn: binding(\.showSwap))
             toggle("开机自动启动", isOn: binding(\.launchAtLogin))
 

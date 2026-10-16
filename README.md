@@ -9,6 +9,7 @@ A lightweight macOS menu bar widget that shows real-time CPU and memory usage, b
 - **菜单栏实时数字**：`[cpu] 12%   [mem] 5.7 GB`，使用 SF Symbol 图标（亮色模式黑、暗色模式白），0.5s 刷新
 - **下拉面板**：
   - CPU 环形仪表 + 8 核每核心横向负载条 + 1/5/15 分钟负载
+  - 温度段：拿到 entitlement 时显示 SMC 真温度（°C + 刻度条 + 60/80°C 阈值），拿不到时降级为 4 档热状态（`NSProcessInfo.thermalState`）显示 nominal/fair/serious/critical
   - 内存环形仪表 + 已用/总量 + 应用/联动/压缩/缓存/空闲堆叠条 + 图例
   - 交换空间（可选）
   - 主机名、运行时间
@@ -41,6 +42,7 @@ Mach API 全部走的是跨架构的 `host_statistics` / `host_statistics64` / `
   - **`NSStatusBar.system.statusItem`** + **`NSPopover`** — 所有 macOS
   - **`NSEvent.addGlobalMonitorForEvents`**（点击外部关闭）— 需要 *系统设置 → 隐私与安全性 → 辅助功能* 授权，**未授权也能用**，只是少一层兜底
   - **`@Observable` 宏** — Swift 5.9+ / macOS 14+
+  - **`AppleSMC` (IOKit)** — 读 CPU 温度。**macOS 15+ 需要 `com.apple.developer.temperature-monitoring` 私有 entitlement**（需 Apple Developer Program 成员 + 特殊 provisioning profile）。本仓库已在 `Resources/MonitorBar.entitlements` 声明，但 ad-hoc 签名拿不到真正的授权。**读不到时面板自动降级为 4 档热状态（`NSProcessInfo.thermalState`），不会报错**
 
 ## 构建 & 运行
 
@@ -92,10 +94,11 @@ swift run MonitorBar --sample
 ├── Sources/MonitorBar/
 │   ├── App.swift                # @main + AppDelegate + 菜单栏 title 装配
 │   ├── SystemSampler.swift      # Mach API 采样（CPU/内存/交换空间/负载）
+│   ├── SMCSampler.swift         # IOKit SMC 读 CPU 温度（macOS 15+ 受 entitlement 限制）
 │   ├── SystemMonitorModel.swift # @Observable 状态 + 偏好 + 定时器
 │   ├── MenuBarPanel.swift       # SwiftUI 下拉面板
 │   ├── Models.swift             # SystemSnapshot / MemorySample 数据结构
-│   ├── Theme.swift              # 配色 / 格式化 / 环形仪表 / 分项条
+│   ├── Theme.swift              # 配色 / 格式化 / 环形仪表 / 分项条 / 热状态条
 │   └── PreviewRenderer.swift    # 离屏渲染（调试）
 ├── Tools/
 │   └── make-icon.swift          # App 图标生成器
