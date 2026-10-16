@@ -26,3 +26,4 @@ MonitorBar.iconset/
 # 系统日志 / 用户残留
 *.log
 xcuserdata/
+dist/

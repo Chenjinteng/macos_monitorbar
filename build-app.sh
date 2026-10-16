@@ -22,10 +22,10 @@ for arg in "$@"; do
   esac
 done
 
-echo "▸ Swift 构建 ($CONFIG)…"
-swift build -c "$CONFIG" --product MonitorBar
+echo "▸ Swift 构建 ($CONFIG, universal)…"
+swift build -c "$CONFIG" --product MonitorBar --arch x86_64 --arch arm64
 
-BIN_DIR="$(swift build -c "$CONFIG" --show-bin-path)"
+BIN_DIR="$(swift build -c "$CONFIG" --arch x86_64 --arch arm64 --show-bin-path)"
 BIN="$BIN_DIR/MonitorBar"
 [ -f "$BIN" ] || { echo "找不到可执行文件: $BIN"; exit 1; }
 
